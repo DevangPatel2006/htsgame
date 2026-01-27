@@ -44,7 +44,7 @@ const SpaceRunner = () => {
   const isTouchingRef = useRef(false);
   const jumpStartTimeRef = useRef(0);
   const obstaclesRef = useRef([]);
-  const worldSpeedRef = useRef(600);
+  const worldSpeedRef = useRef(isMobile ? 520 : 600);
   const scoreRef = useRef(0);
   const jumpCountRef = useRef(0);
   
@@ -59,11 +59,11 @@ const SpaceRunner = () => {
   const getGameDimensions = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const sizeFactor = isMobile ? 0.12 : 0.15; // Smaller on mobile to "zoom out"
-    const maxSize = isMobile ? 70 : 80;
+    const sizeFactor = isMobile ? 0.10 : 0.15; // Further zoom-out on mobile
+    const maxSize = isMobile ? 60 : 80;
     const playerSize = Math.min(width * sizeFactor, maxSize);
     const obstacleSize = Math.min(width * sizeFactor, maxSize);
-    const groundY = height * (isMobile ? 0.65 : 0.60); // Slightly lower ground on mobile for more headroom
+    const groundY = height * (isMobile ? 0.70 : 0.60); // More runway on mobile
     return { width, height, playerSize, obstacleSize, groundY };
   };
   
@@ -73,7 +73,7 @@ const SpaceRunner = () => {
   const JUMP_VELOCITY = -950;
   const MIN_JUMP_DURATION = 0.15;
   const MAX_JUMP_HOLD = 0.35;
-  const MAX_WORLD_SPEED = 6200;
+  const MAX_WORLD_SPEED = isMobile ? 4500 : 6200;
   const PLAYER_WIDTH = dims.playerSize;
   const PLAYER_HEIGHT = dims.playerSize;
   const OBSTACLE_SIZE = dims.obstacleSize;
@@ -272,7 +272,10 @@ const SpaceRunner = () => {
     
     const speedMultiplier = Math.floor((worldSpeedRef.current - 600) / 100);
     scoreRef.current += (1 + speedMultiplier) * (deltaTime / 100);
-    worldSpeedRef.current = Math.min(worldSpeedRef.current * 1.0001, MAX_WORLD_SPEED);
+    worldSpeedRef.current = Math.min(
+      worldSpeedRef.current * (isMobile ? 1.00004 : 1.0001),
+      MAX_WORLD_SPEED
+    );
     
     if (checkCollision()) {
       handleGameOver();
@@ -308,7 +311,7 @@ const SpaceRunner = () => {
     const variance = 900 / speedFactor;
     const nextDelay = Math.max(700, baseDelay + Math.random() * variance);
 
-    const spawnX = window.innerWidth * 1.1;
+    const spawnX = window.innerWidth * 1.25; // Spawn farther so players see ahead
     const floatingHeight = GROUND_Y - (window.innerHeight * 0.18); // Adjusted for new ground height
 
     const spawnSingle = (type, offset = 0) => {
@@ -420,7 +423,7 @@ const SpaceRunner = () => {
     isTouchingRef.current = false;
     jumpStartTimeRef.current = 0;
     obstaclesRef.current = [];
-    worldSpeedRef.current = 600;
+    worldSpeedRef.current = isMobile ? 520 : 600;
     scoreRef.current = 0;
     jumpCountRef.current = 0; // Reset jump counter
     
