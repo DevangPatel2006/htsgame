@@ -59,9 +59,11 @@ const SpaceRunner = () => {
   const getGameDimensions = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const playerSize = Math.min(width * 0.15, 80);
-    const obstacleSize = Math.min(width * 0.15, 80);
-    const groundY = height * 0.60; // Raised higher on screen
+    const sizeFactor = isMobile ? 0.12 : 0.15; // Smaller on mobile to "zoom out"
+    const maxSize = isMobile ? 70 : 80;
+    const playerSize = Math.min(width * sizeFactor, maxSize);
+    const obstacleSize = Math.min(width * sizeFactor, maxSize);
+    const groundY = height * (isMobile ? 0.65 : 0.60); // Slightly lower ground on mobile for more headroom
     return { width, height, playerSize, obstacleSize, groundY };
   };
   
