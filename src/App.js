@@ -213,14 +213,12 @@ const SpaceRunner = () => {
       const obsTop = obs.y;
       const obsBottom = obs.y + OBSTACLE_SIZE;
       
-      // Tighter hitbox for obstacles - reduce by 20 pixels on each side for ground obstacles
-      const hitboxReduction = obs.type === 'ground' ? 20 : 10;
-      
+      // Strict collision detection - minimal tolerance
       if (
-        playerRight - 10 > obsLeft + hitboxReduction &&
-        playerLeft + 10 < obsRight - hitboxReduction &&
-        playerBottom - 10 > obsTop + hitboxReduction &&
-        playerTop + 10 < obsBottom - hitboxReduction
+        playerRight > obsLeft &&
+        playerLeft < obsRight &&
+        playerBottom > obsTop &&
+        playerTop < obsBottom
       ) {
         return true;
       }
@@ -602,7 +600,7 @@ const SpaceRunner = () => {
           }}
         ></div>
 
-        <div className="absolute text-gray-900 font-bold" style={{ top: '2rem', right: '2rem', fontSize: '2rem', zIndex: 50, color: '#ffffff' }}>
+        <div className="absolute text-gray-900 font-bold" style={{ top: '5rem', right: '2rem', fontSize: '2rem', zIndex: 50, color: '#ffffff' }}>
           {Math.floor(scoreRef.current)}
         </div>
 
@@ -666,7 +664,7 @@ const SpaceRunner = () => {
           </div>
         ))}
 
-        <div className="absolute left-1/2 transform -translate-x-1/2 text-center text-gray-800" style={{ bottom: '2rem', fontSize: '1rem', zIndex: 50,color: '#ffffff' }}>
+        <div className="absolute left-1/2 transform -translate-x-1/2 text-center text-gray-800" style={{ bottom: '4rem', fontSize: '1rem', zIndex: 50,color: '#ffffff' }}>
           <p>Tap & Hold: Jump Higher | Quick Tap: Short Hop</p>
         </div>
       </div>
