@@ -26,9 +26,11 @@ const SpaceRunner = () => {
   const [playerContact, setPlayerContact] = useState('');
   const [finalScore, setFinalScore] = useState(0);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [playerHighScore, setPlayerHighScore] = useState(0);
   const [loading, setLoading] = useState(false);
   const [firebaseInitialized, setFirebaseInitialized] = useState(false);
   const [error, setError] = useState('');
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
   
   const firebaseApp = useRef(null);
   const database = useRef(null);
@@ -43,6 +45,7 @@ const SpaceRunner = () => {
   const obstaclesRef = useRef([]);
   const worldSpeedRef = useRef(600);
   const scoreRef = useRef(0);
+  const jumpCountRef = useRef(0);
   
   const [, forceUpdate] = useState({});
   
@@ -57,7 +60,7 @@ const SpaceRunner = () => {
     const height = window.innerHeight;
     const playerSize = Math.min(width * 0.15, 80);
     const obstacleSize = Math.min(width * 0.15, 80);
-    const groundY = height * 0.65;
+    const groundY = height * 0.70; // Lowered for better visibility
     return { width, height, playerSize, obstacleSize, groundY };
   };
   
@@ -122,6 +125,7 @@ const SpaceRunner = () => {
         database.current = firebaseApp.current.database();
         setFirebaseInitialized(true);
         loadLeaderboard();
+        preloadAssets();
       } catch (err) {
         console.error('Firebase initialization error:', err);
         setError('Failed to connect to database. Please check your Firebase config.');
@@ -138,7 +142,7 @@ const SpaceRunner = () => {
     setLoading(true);
     try {
       const scoresRef = database.current.ref('scores');
-      const snapshot = await scoresRef.orderByChild('score').limitToLast(10).once('value');
+      const snapshot = await scoresRef.orderByChild('score').limitToLast(100).once('value');
       
       const scores = [];
       snapshot.forEach((childSnapshot) => {
@@ -149,12 +153,43 @@ const SpaceRunner = () => {
       });
       
       scores.sort((a, b) => b.score - a.score);
-      setLeaderboard(scores);
+      setLeaderboard(scores.slice(0, 10)); // Show only top 10
+      
+      // Get player's highest score if they have one
+      if (playerContact) {
+        const playerScores = scores.filter(s => s.contact === playerContact);
+        if (playerScores.length > 0) {
+          setPlayerHighScore(Math.max(...playerScores.map(s => s.score)));
+        }
+      }
     } catch (error) {
       console.error('Error loading leaderboard:', error);
       setError('Failed to load leaderboard');
     }
     setLoading(false);
+  };
+
+  // Preload assets to improve initial loading
+  const preloadAssets = () => {
+    const imagesToLoad = Object.values(ASSETS);
+    let loadedCount = 0;
+    
+    imagesToLoad.forEach(src => {
+      const img = new Image();
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === imagesToLoad.length) {
+          setAssetsLoaded(true);
+        }
+      };
+      img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === imagesToLoad.length) {
+          setAssetsLoaded(true);
+        }
+      };
+      img.src = src;
+    });
   };
 
   const checkCollision = () => {
@@ -216,7 +251,7 @@ const SpaceRunner = () => {
     const speed = worldSpeedRef.current / 60;
     obstaclesRef.current = obstaclesRef.current
       .map(obs => ({ ...obs, x: obs.x - speed }))
-      .filter(obs => obs.x > -100);
+      .filter(obs => obs.x > -OBSTACLE_SIZE - 50); // Better off-screen check
     
     const speedMultiplier = Math.floor((worldSpeedRef.current - 600) / 100);
     scoreRef.current += (1 + speedMultiplier) * (deltaTime / 100);
@@ -234,10 +269,12 @@ const SpaceRunner = () => {
   const handleTouchStart = () => {
     if (!gameActiveRef.current) return;
     isTouchingRef.current = true;
-    if (playerYRef.current >= GROUND_Y) {
+    // Only allow jump when on ground to prevent cheating
+    if (playerYRef.current >= GROUND_Y - 1) {
       velocityYRef.current = JUMP_VELOCITY;
       isJumpingRef.current = true;
       jumpStartTimeRef.current = performance.now();
+      jumpCountRef.current++; // Track jumps
     }
   };
 
@@ -254,7 +291,7 @@ const SpaceRunner = () => {
     const nextDelay = Math.max(700, baseDelay + Math.random() * variance);
 
     const spawnX = window.innerWidth * 1.1;
-    const floatingHeight = GROUND_Y - (window.innerHeight * 0.25);
+    const floatingHeight = GROUND_Y - (window.innerHeight * 0.15); // Lowered from 0.25 to 0.15
 
     const spawnSingle = (type, offset = 0) => {
       obstaclesRef.current.push({
@@ -366,6 +403,7 @@ const SpaceRunner = () => {
     obstaclesRef.current = [];
     worldSpeedRef.current = 600;
     scoreRef.current = 0;
+    jumpCountRef.current = 0; // Reset jump counter
     
     gameActiveRef.current = true;
     lastFrameTimeRef.current = performance.now();
@@ -411,6 +449,19 @@ const SpaceRunner = () => {
           {!firebaseInitialized && (
             <div className="bg-blue-100 border-2 border-blue-300 rounded-xl p-3 text-blue-700 text-sm">
               Connecting to database...
+            </div>
+          )}
+          
+          {!assetsLoaded && firebaseInitialized && (
+            <div className="bg-green-100 border-2 border-green-300 rounded-xl p-3 text-green-700 text-sm">
+              Loading game assets...
+            </div>
+          )}
+          
+          {playerHighScore > 0 && (
+            <div className="bg-purple-100 border-2 border-purple-300 rounded-xl p-4">
+              <h3 className="text-purple-700 font-semibold mb-2 text-center">Your Best Score</h3>
+              <p className="text-purple-900 font-bold text-2xl text-center">{playerHighScore}</p>
             </div>
           )}
           
