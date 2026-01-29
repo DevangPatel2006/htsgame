@@ -75,7 +75,7 @@ const SpaceRunner = () => {
   const JUMP_VELOCITY = -950;
   const MIN_JUMP_DURATION = 0.15;
   const MAX_JUMP_HOLD = 0.35;
-  const MAX_WORLD_SPEED = isMobile ? 3500 : 6200;
+  const MAX_WORLD_SPEED = isMobile ? 4200 : 6200;
   const PLAYER_WIDTH = dims.playerSize;
   const PLAYER_HEIGHT = dims.playerSize;
   const OBSTACLE_SIZE = dims.obstacleSize;
@@ -273,7 +273,7 @@ const SpaceRunner = () => {
       .filter(obs => obs.x > -OBSTACLE_SIZE - 50); // Better off-screen check
     
     // Chrome Dino-style scoring and speed increase
-    const baseSpeed = isMobile ? 520 : 600;
+    const baseSpeed = isMobile ? 400 : 600;
     const speedMultiplier = Math.floor((worldSpeedRef.current - baseSpeed) / 150);
     scoreRef.current += (1 + speedMultiplier * 0.5) * (deltaTime / 100);
     // More gradual speed increase like Chrome Dino
@@ -311,7 +311,7 @@ const SpaceRunner = () => {
   const spawnObstacle = () => {
     if (!gameActiveRef.current) return;
     // Chrome Dino-style predictable spawning with gradual difficulty
-    const speedFactor = Math.min(1.5, worldSpeedRef.current / (isMobile ? 520 : 600));
+    const speedFactor = Math.min(1.5, worldSpeedRef.current / (isMobile ? 400 : 600));
     const baseDelay = 1600 / speedFactor;
     const variance = 600 / speedFactor;
     const nextDelay = Math.max(isMobile ? 900 : 800, baseDelay + Math.random() * variance);
