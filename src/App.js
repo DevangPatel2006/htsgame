@@ -512,6 +512,11 @@ const SpaceRunner = () => {
           <h1 className="text-5xl font-bold text-gray-900">TechSpace Runner</h1>
           <p className="text-gray-600">HTS'26 Web Game Challenge</p>
           
+          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-300">
+            <p className="text-blue-900 font-semibold text-sm">🚀 BETA TESTER</p>
+            <p className="text-blue-800 text-xs mt-2">Play the game and share your feedback to help us improve!</p>
+          </div>
+          
           {error && (
             <div className="bg-red-100 border-2 border-red-300 rounded-xl p-3 text-red-700 text-sm">
               {error}
