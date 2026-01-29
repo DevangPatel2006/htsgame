@@ -49,6 +49,7 @@ const SpaceRunner = () => {
   const worldSpeedRef = useRef(isMobile ? 480 : 600);
   const scoreRef = useRef(0);
   const jumpCountRef = useRef(0);
+  const groundOffsetRef = useRef(0);
   
   const [, forceUpdate] = useState({});
   
@@ -289,6 +290,9 @@ const SpaceRunner = () => {
         return obs.x > -obsSize - 50;
       });
     
+    // Move ground background smoothly - no modulo to prevent any visible jumps
+    groundOffsetRef.current += speed;
+    
     // Chrome Dino-style scoring and speed increase
     const baseSpeed = isMobile ? 400 : 600;
     const speedMultiplier = Math.floor((worldSpeedRef.current - baseSpeed) / 150);
@@ -451,6 +455,7 @@ const SpaceRunner = () => {
     worldSpeedRef.current = isMobile ? 520 : 600;
     scoreRef.current = 0;
     jumpCountRef.current = 0; // Reset jump counter
+    groundOffsetRef.current = 0; // Reset ground scroll
     
     gameActiveRef.current = true;
     lastFrameTimeRef.current = performance.now();
@@ -687,7 +692,7 @@ const SpaceRunner = () => {
         </div> */}
 
         <div 
-          className="absolute left-0 right-0 ground-scroll"
+          className="absolute left-0 right-0"
           style={{
             top: `${gameDims.groundY + gameDims.playerSize - 5}px`,
             bottom: 0,
@@ -695,18 +700,10 @@ const SpaceRunner = () => {
             backgroundColor: '#8B4513',
             backgroundRepeat: 'repeat-x',
             backgroundSize: 'auto 100%',
-            backgroundPosition: '0 top',
-            zIndex: 5,
-            animation: gameActiveRef.current ? 'scrollGround 1s linear infinite' : 'none'
+            backgroundPosition: `-${groundOffsetRef.current}px top`,
+            zIndex: 5
           }}
         ></div>
-
-        <style>{`
-          @keyframes scrollGround {
-            from { background-position: 0 top; }
-            to { background-position: -100px top; }
-          }
-        `}</style>
 
         <div
           className="absolute"
