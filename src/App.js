@@ -34,7 +34,6 @@ const SpaceRunner = () => {
   const [error, setError] = useState('');
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
-  const [feedback, setFeedback] = useState('');
   
   const firebaseApp = useRef(null);
   const database = useRef(null);
@@ -47,7 +46,7 @@ const SpaceRunner = () => {
   const isTouchingRef = useRef(false);
   const jumpStartTimeRef = useRef(0);
   const obstaclesRef = useRef([]);
-  const worldSpeedRef = useRef(isMobile ? 520 : 600);
+  const worldSpeedRef = useRef(isMobile ? 480 : 600);
   const scoreRef = useRef(0);
   const jumpCountRef = useRef(0);
   
@@ -62,14 +61,24 @@ const SpaceRunner = () => {
   const getGameDimensions = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    // Match Chrome Dino game proportions - larger visible player
-    const sizeFactor = isMobile ? 0.14 : 0.12;
-    const maxSize = isMobile ? 90 : 70;
+    // Much larger player like Chrome Dino - prominently visible
+    const sizeFactor = isMobile ? 0.20 : 0.15;
+    const maxSize = isMobile ? 130 : 90;
     const playerSize = Math.min(width * sizeFactor, maxSize);
-    const obstacleSize = Math.min(width * sizeFactor, maxSize);
-    // Ground position like T-Rex game - balanced on screen
-    const groundY = height * (isMobile ? 0.68 : 0.65);
-    return { width, height, playerSize, obstacleSize, groundY };
+    
+    // Floating meteoroid - smaller
+    const floatingObstacleSizeFactor = isMobile ? 0.12 : 0.10;
+    const floatingObstacleMaxSize = isMobile ? 70 : 55;
+    const floatingObstacleSize = Math.min(width * floatingObstacleSizeFactor, floatingObstacleMaxSize);
+    
+    // Landed meteoroid - larger (like before)
+    const landedObstacleSizeFactor = isMobile ? 0.18 : 0.14;
+    const landedObstacleMaxSize = isMobile ? 110 : 80;
+    const landedObstacleSize = Math.min(width * landedObstacleSizeFactor, landedObstacleMaxSize);
+    
+    // Ground positioned to give good play space - like T-Rex game
+    const groundY = height * (isMobile ? 0.65 : 0.62);
+    return { width, height, playerSize, floatingObstacleSize, landedObstacleSize, groundY };
   };
   
   const dims = getGameDimensions();
@@ -81,7 +90,8 @@ const SpaceRunner = () => {
   const MAX_WORLD_SPEED = isMobile ? 4200 : 6200;
   const PLAYER_WIDTH = dims.playerSize;
   const PLAYER_HEIGHT = dims.playerSize;
-  const OBSTACLE_SIZE = dims.obstacleSize;
+  const FLOATING_OBSTACLE_SIZE = dims.floatingObstacleSize;
+  const LANDED_OBSTACLE_SIZE = dims.landedObstacleSize;
 
   const vibrate = (pattern) => {
     if (!isMobile || !('vibrate' in navigator)) return;
@@ -221,13 +231,14 @@ const SpaceRunner = () => {
     const playerBottom = playerYRef.current + PLAYER_HEIGHT;
     
     for (let obs of obstaclesRef.current) {
+      const obsSize = obs.type === 'floating' ? FLOATING_OBSTACLE_SIZE : LANDED_OBSTACLE_SIZE;
       const obsLeft = obs.x;
-      const obsRight = obs.x + OBSTACLE_SIZE;
+      const obsRight = obs.x + obsSize;
       const obsTop = obs.y;
-      const obsBottom = obs.y + OBSTACLE_SIZE;
+      const obsBottom = obs.y + obsSize;
       
       // Chrome Dino-style forgiving hitboxes - 15% reduction on all sides
-      const hitboxPadding = OBSTACLE_SIZE * 0.15;
+      const hitboxPadding = obsSize * 0.15;
       
       if (
         playerRight - hitboxPadding > obsLeft + hitboxPadding &&
@@ -273,7 +284,10 @@ const SpaceRunner = () => {
     const speed = worldSpeedRef.current / 60;
     obstaclesRef.current = obstaclesRef.current
       .map(obs => ({ ...obs, x: obs.x - speed }))
-      .filter(obs => obs.x > -OBSTACLE_SIZE - 50); // Better off-screen check
+      .filter(obs => {
+        const obsSize = obs.type === 'floating' ? FLOATING_OBSTACLE_SIZE : LANDED_OBSTACLE_SIZE;
+        return obs.x > -obsSize - 50;
+      });
     
     // Chrome Dino-style scoring and speed increase
     const baseSpeed = isMobile ? 400 : 600;
@@ -333,20 +347,22 @@ const SpaceRunner = () => {
 
     // Chrome Dino-style obstacle patterns - simpler and more predictable
     const roll = Math.random();
+    const avgObstacleSize = (FLOATING_OBSTACLE_SIZE + LANDED_OBSTACLE_SIZE) / 2;
+    
     if (roll < 0.25) {
       // Double ground - wider spacing
-      const gap = OBSTACLE_SIZE * 1.5;
+      const gap = avgObstacleSize * 1.5;
       spawnSingle('ground', 0);
       spawnSingle('ground', gap);
     } else if (roll < 0.35) {
       // Double floating
-      const gap = OBSTACLE_SIZE * 1.5;
+      const gap = avgObstacleSize * 1.5;
       spawnSingle('floating', 0);
       spawnSingle('floating', gap);
     } else if (roll < 0.42) {
       // Triple ground - only at higher speeds
       if (worldSpeedRef.current > (isMobile ? 700 : 1000)) {
-        const gap = OBSTACLE_SIZE * 1.1;
+        const gap = avgObstacleSize * 1.1;
         spawnSingle('ground', 0);
         spawnSingle('ground', gap);
         spawnSingle('ground', gap * 2);
@@ -376,7 +392,6 @@ const SpaceRunner = () => {
     const score = Math.floor(scoreRef.current);
     setFinalScore(score);
     vibrate([25, 40, 25]);
-    setFeedback('');
     
     // Save to Firebase
     if (database.current) {
@@ -419,44 +434,6 @@ const SpaceRunner = () => {
     }
     
     setScreen('gameover');
-  };
-
-  const handleSubmitFeedback = async () => {
-    if (!feedback.trim()) {
-      setError('Please enter your feedback before submitting.');
-      return;
-    }
-
-    setLoading(true);
-    
-    // Save feedback to Firebase
-    if (database.current) {
-      try {
-        const feedbackRef = database.current.ref('feedback');
-        await feedbackRef.push({
-          playerName: playerName,
-          playerContact: playerContact,
-          score: finalScore,
-          feedback: feedback,
-          timestamp: Date.now()
-        });
-        
-        setError('');
-        setFeedback('');
-        
-        // Show success message and navigate back
-        setTimeout(() => {
-          setPlayerName('');
-          setPlayerContact('');
-          setScreen('landing');
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Failed to save feedback:', error);
-        setError('Failed to save feedback. Please try again.');
-        setLoading(false);
-      }
-    }
   };
 
   const startGame = () => {
@@ -513,11 +490,6 @@ const SpaceRunner = () => {
         <div className="max-w-md w-full text-center space-y-6">
           <h1 className="text-5xl font-bold text-gray-900">TechSpace Runner</h1>
           <p className="text-gray-600">HTS'26 Web Game Challenge</p>
-          
-          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-300">
-            <p className="text-blue-900 font-semibold text-sm">🚀 BETA TESTER</p>
-            <p className="text-blue-800 text-xs mt-2">Play the game and share your feedback to help us improve!</p>
-          </div>
           
           {error && (
             <div className="bg-red-100 border-2 border-red-300 rounded-xl p-3 text-red-700 text-sm">
@@ -743,15 +715,17 @@ const SpaceRunner = () => {
           />
         </div>
 
-        {obstaclesRef.current.map(obs => (
+        {obstaclesRef.current.map(obs => {
+          const obsSize = obs.type === 'floating' ? FLOATING_OBSTACLE_SIZE : LANDED_OBSTACLE_SIZE;
+          return (
           <div
             key={obs.id}
             className="absolute"
             style={{
               left: `${obs.x}px`,
               top: `${obs.y}px`,
-              width: `${gameDims.obstacleSize}px`,
-              height: `${gameDims.obstacleSize}px`,
+              width: `${obsSize}px`,
+              height: `${obsSize}px`,
               zIndex: 15
             }}
           >
@@ -765,7 +739,8 @@ const SpaceRunner = () => {
               }}
             ></div>
           </div>
-        ))}
+          );
+        })}
 
         {showInstructions && (
           <div 
@@ -813,30 +788,8 @@ const SpaceRunner = () => {
               ))}
             </div>
           )}
-
-          <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-300">
-            <label className="block text-gray-700 font-semibold mb-3">
-              Share Your Feedback
-            </label>
-            <textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Tell us how you liked the game, what could be improved, or any bugs you found..."
-              className="w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 resize-none"
-              rows="4"
-            />
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-          </div>
           
           <div className="space-y-3">
-            <button
-              onClick={handleSubmitFeedback}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-xl"
-            >
-              {loading ? 'Submitting...' : 'Submit Feedback'}
-            </button>
-
             <button
               onClick={startGame}
               className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 rounded-xl"
@@ -848,7 +801,6 @@ const SpaceRunner = () => {
               onClick={() => {
                 setPlayerName('');
                 setPlayerContact('');
-                setFeedback('');
                 setScreen('landing');
               }}
               className="w-full bg-gray-200 hover:bg-gray-300 border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-xl"
