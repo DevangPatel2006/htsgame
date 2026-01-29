@@ -76,8 +76,8 @@ const SpaceRunner = () => {
     const landedObstacleMaxSize = isMobile ? 110 : 80;
     const landedObstacleSize = Math.min(width * landedObstacleSizeFactor, landedObstacleMaxSize);
     
-    // Ground positioned to give good play space - like T-Rex game
-    const groundY = height * (isMobile ? 0.65 : 0.62);
+    // Ground positioned higher on screen
+    const groundY = height * (isMobile ? 0.60 : 0.58);
     return { width, height, playerSize, floatingObstacleSize, landedObstacleSize, groundY };
   };
   
@@ -337,10 +337,13 @@ const SpaceRunner = () => {
     const floatingHeight = GROUND_Y - (window.innerHeight * 0.18); // Adjusted for new ground height
 
     const spawnSingle = (type, offset = 0) => {
+      // Position obstacles so their bottoms align with the player's ground level
+      const groundLevel = GROUND_Y + PLAYER_HEIGHT;
+      const yPos = type === 'floating' ? floatingHeight : groundLevel - LANDED_OBSTACLE_SIZE;
       obstaclesRef.current.push({
         id: `${Date.now()}-${Math.random()}`,
         x: spawnX + offset,
-        y: type === 'floating' ? floatingHeight : GROUND_Y,
+        y: yPos,
         type
       });
     };
@@ -684,7 +687,7 @@ const SpaceRunner = () => {
         </div> */}
 
         <div 
-          className="absolute left-0 right-0"
+          className="absolute left-0 right-0 ground-scroll"
           style={{
             top: `${gameDims.groundY + gameDims.playerSize - 5}px`,
             bottom: 0,
@@ -692,10 +695,18 @@ const SpaceRunner = () => {
             backgroundColor: '#8B4513',
             backgroundRepeat: 'repeat-x',
             backgroundSize: 'auto 100%',
-            backgroundPosition: 'top left',
-            zIndex: 5
+            backgroundPosition: '0 top',
+            zIndex: 5,
+            animation: gameActiveRef.current ? 'scrollGround 1s linear infinite' : 'none'
           }}
         ></div>
+
+        <style>{`
+          @keyframes scrollGround {
+            from { background-position: 0 top; }
+            to { background-position: -100px top; }
+          }
+        `}</style>
 
         <div
           className="absolute"
