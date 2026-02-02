@@ -223,7 +223,7 @@ const SpaceRunner = () => {
           firebaseApp.current = window.firebase.app();
         }
         
-        database.current = firebaseApp.current.database();
+        database.current = window.firebase.database(firebaseApp.current);
         setFirebaseInitialized(true);
         loadLeaderboard();
         preloadAssets();
