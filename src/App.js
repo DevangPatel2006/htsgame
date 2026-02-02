@@ -24,7 +24,10 @@ const FIREBASE_CONFIG = {
 };
 
 const SpaceRunner = () => {
-  const isMobile = typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
+  // Better mobile detection including screen size check
+  const isMobile = typeof navigator !== 'undefined' && 
+    (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+    (typeof window !== 'undefined' && window.innerWidth <= 768));
   const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [screen, setScreen] = useState('landing');
   const [playerName, setPlayerName] = useState('');
@@ -92,7 +95,7 @@ const SpaceRunner = () => {
   const JUMP_VELOCITY = -950;
   const MIN_JUMP_DURATION = 0.15;
   const MAX_JUMP_HOLD = 0.35;
-  const MAX_WORLD_SPEED = isMobile ? 4200 : 6200;
+  const MAX_WORLD_SPEED = isMobile ? 3500 : 6200;
   const PLAYER_WIDTH = dims.playerSize;
   const PLAYER_HEIGHT = dims.playerSize;
   const FLOATING_OBSTACLE_SIZE = dims.floatingObstacleSize;
@@ -459,7 +462,8 @@ const SpaceRunner = () => {
     isTouchingRef.current = false;
     jumpStartTimeRef.current = 0;
     obstaclesRef.current = [];
-    worldSpeedRef.current = isMobile ? 520 : 600;
+    // Slower speed for mobile/phones
+    worldSpeedRef.current = isMobile ? 400 : 600;
     scoreRef.current = 0;
     jumpCountRef.current = 0; // Reset jump counter
     groundOffsetRef.current = 0; // Reset ground scroll
