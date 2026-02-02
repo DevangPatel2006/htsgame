@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, Play, Users } from 'lucide-react';
 
 const ASSETS = {
@@ -173,7 +173,7 @@ const SpaceRunner = () => {
   }, []);
 
   // Load leaderboard from Firebase
-  const loadLeaderboard = async () => {
+  const loadLeaderboard = useCallback(async () => {
     if (!database.current) return;
     
     setLoading(true);
@@ -204,7 +204,7 @@ const SpaceRunner = () => {
       setError('Failed to load leaderboard');
     }
     setLoading(false);
-  };
+  }, [playerContact]);
 
   // Preload all game assets before gameplay
   const preloadAssets = () => {
