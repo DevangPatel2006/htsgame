@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'CYN';
-  src: url('%PUBLIC_URL%/assets/CYN_ModulatorDemiBold.otf') format('opentype');
+  src: url('./CYN_ModulatorDemiBold.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }
