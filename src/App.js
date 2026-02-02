@@ -127,51 +127,6 @@ const SpaceRunner = () => {
     if (cachedContact) setPlayerContact(cachedContact);
   }, []);
 
-  // Initialize Firebase
-  useEffect(() => {
-    const initFirebase = async () => {
-      try {
-        // Dynamically load Firebase scripts
-        const loadScript = (src) => {
-          return new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src="${src}"]`)) {
-              resolve();
-              return;
-            }
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        };
-
-        await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
-        await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js');
-
-        if (!window.firebase) {
-          throw new Error('Firebase failed to load');
-        }
-
-        if (!window.firebase.apps.length) {
-          firebaseApp.current = window.firebase.initializeApp(FIREBASE_CONFIG);
-        } else {
-          firebaseApp.current = window.firebase.app();
-        }
-        
-        database.current = firebaseApp.current.database();
-        setFirebaseInitialized(true);
-        loadLeaderboard();
-        preloadAssets();
-      } catch (err) {
-        console.error('Firebase initialization error:', err);
-        setError('Failed to connect to database. Please check your Firebase config.');
-      }
-    };
-
-    initFirebase();
-  }, [loadLeaderboard, preloadAssets]);
-
   // Load leaderboard from Firebase
   const loadLeaderboard = useCallback(async () => {
     if (!database.current) return;
@@ -235,6 +190,51 @@ const SpaceRunner = () => {
       img.src = src;
     });
   }, []);
+
+  // Initialize Firebase
+  useEffect(() => {
+    const initFirebase = async () => {
+      try {
+        // Dynamically load Firebase scripts
+        const loadScript = (src) => {
+          return new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) {
+              resolve();
+              return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+        };
+
+        await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
+        await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js');
+
+        if (!window.firebase) {
+          throw new Error('Firebase failed to load');
+        }
+
+        if (!window.firebase.apps.length) {
+          firebaseApp.current = window.firebase.initializeApp(FIREBASE_CONFIG);
+        } else {
+          firebaseApp.current = window.firebase.app();
+        }
+        
+        database.current = firebaseApp.current.database();
+        setFirebaseInitialized(true);
+        loadLeaderboard();
+        preloadAssets();
+      } catch (err) {
+        console.error('Firebase initialization error:', err);
+        setError('Failed to connect to database. Please check your Firebase config.');
+      }
+    };
+
+    initFirebase();
+  }, [loadLeaderboard, preloadAssets]);
 
   const checkCollision = () => {
     const playerLeft = dims.width * 0.1;
