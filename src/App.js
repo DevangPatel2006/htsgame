@@ -53,7 +53,7 @@ const SpaceRunner = () => {
   const isTouchingRef = useRef(false);
   const jumpStartTimeRef = useRef(0);
   const obstaclesRef = useRef([]);
-  const worldSpeedRef = useRef(isMobile ? 480 : 600);
+  const worldSpeedRef = useRef(isMobile ? 400 : 600);
   const scoreRef = useRef(0);
   const jumpCountRef = useRef(0);
   const groundOffsetRef = useRef(0);
