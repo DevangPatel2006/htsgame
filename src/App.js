@@ -170,7 +170,7 @@ const SpaceRunner = () => {
     };
 
     initFirebase();
-  }, []);
+  }, [loadLeaderboard, preloadAssets]);
 
   // Load leaderboard from Firebase
   const loadLeaderboard = useCallback(async () => {
@@ -207,7 +207,7 @@ const SpaceRunner = () => {
   }, [playerContact]);
 
   // Preload all game assets before gameplay
-  const preloadAssets = () => {
+  const preloadAssets = useCallback(() => {
     const imagesToLoad = Object.values(ASSETS);
     let loadedCount = 0;
     const totalAssets = imagesToLoad.length;
@@ -234,7 +234,7 @@ const SpaceRunner = () => {
       };
       img.src = src;
     });
-  };
+  }, []);
 
   const checkCollision = () => {
     const playerLeft = dims.width * 0.1;
