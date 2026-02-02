@@ -213,6 +213,9 @@ const SpaceRunner = () => {
         await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
         await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js');
 
+        // Wait a bit for scripts to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         if (!window.firebase) {
           throw new Error('Firebase failed to load');
         }
@@ -223,7 +226,7 @@ const SpaceRunner = () => {
           firebaseApp.current = window.firebase.app();
         }
         
-        database.current = window.firebase.database(firebaseApp.current);
+        database.current = firebaseApp.current.database();
         setFirebaseInitialized(true);
         loadLeaderboard();
         preloadAssets();
